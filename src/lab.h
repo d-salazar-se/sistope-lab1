@@ -8,6 +8,14 @@
 #include <unistd.h>
 
 typedef struct {
+	char * filenameVisibilities;	// -i
+	char * filenameOutput;			// -o
+	int numberOfDisks;				// -n
+	int diskWidth;					// -d
+	int showChildVisibilities;		// -b
+} param;
+
+typedef struct {
 	float u;
 	float v;
 	float real;
@@ -20,14 +28,19 @@ typedef struct {
 	visibility ** array;
 } visibilityArray;
 
+
 typedef struct {
 	int pid;
 	int pipe;
+	int fatherPid;
 } child;
 
-// void printVisibilitiesFile(visibilityArray * va);
-
+param * getParams(int argc, char * argv[]);
+void printParams(param * p);
 
 visibilityArray * readVisibilitiesFile(const char * filename);
+void printVisibilitiesFile(visibilityArray * va);
+
+void sendToChild(child * c, char * message);
 
 #endif
