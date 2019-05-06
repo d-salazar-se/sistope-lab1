@@ -1,14 +1,5 @@
 #include "lab.h"
 
-#define USAGE "USAGE:\n\
-./lab1.o -i <filename> -o <filename> -n <amount of disks> -d <disk width> [-b]\n\
-\t-i\tnombre de archivo de visibilidades\n\
-\t-o\tnombre de archivo de salida\n\
-\t-n\tcantidad de discos\n\
-\t-d\tancho de cada disco\n\
-OPTIONS:\n\
-\t-b\tShow each child process visibilities"
-
 void printVisibilitiesFile(visibilityArray * va) {
 	int i;
 	for (i = 0; i < va->numberOfElements; ++i)
@@ -19,16 +10,6 @@ void printVisibilitiesFile(visibilityArray * va) {
 												va->array[i]->imaginary,
 												va->array[i]->noise);
 	}
-}
-
-void printParams(param * p) {
-	printf("-i: %s\n-o: %s\n-n: %d\n-d: %d\n-b: %d\n",
-				p->filenameVisibilities,
-				p->filenameOutput,
-				p->numberOfDisks, 
-				p->diskWidth,
-				p->showChildVisibilities
-			);
 }
 
 param * getParams(int argc, char * argv[]) {
@@ -107,9 +88,80 @@ visibilityArray * readVisibilitiesFile(const char * filename) {
 	return visibilities;
 }
 
-void sendToChild(child * c, char * message) {
-	char * argv[] = { message, NULL };
-	char * envp[] = { NULL };
+float visibilityDistance(visibility * v) {
+	return sqrt(pow(v->u, 2) + pow(v->v, 2));
+}
 
-	execve("./vis.o", argv, envp);
+int selectDisk(int diskWidth, visibility * v) {
+	return (visibilityDistance(v) / diskWidth);
+}
+
+void writeToChild(disk * d, char * message) {
+	// char * argv[] = { message, NULL };
+	// char * envp[] = { NULL };
+
+	// execve("./vis.o", argv, envp);
+
+	write(d->pipe[ESCRITURA], message, strlen(message) * sizeof(char));
+}
+
+void readFromChild(disk * d, int bFlag) {
+	char buffer[256];
+	read(d->pipe[LECTURA], buffer, 256 * sizeof(char));
+
+	if (bFlag) {
+		printf("Soy el hijo de pid %d, procesé %d visibilidades\n", getpid(), 0);
+	}
+}
+
+disk ** createDisks(int numberOfDisks) {
+	disk ** disks = (disk**)malloc(numberOfDisks * sizeof(disk*));
+
+	int i;
+	for (i = 0; i < numberOfDisks; ++i) {
+		disks[i] = (disk*)malloc(sizeof(disk));
+
+		pipe(disks[i]->pipe);
+
+		disks[i]->id 			= i + 1;
+		disks[i]->realMean 		= 0.0;
+		disks[i]->imaginaryMean = 0.0;
+		disks[i]->potency 		= 0.0;
+		disks[i]->totalNoise 	= 0.0;
+	}
+
+	return disks;
+}
+
+disk * findByPID(disk ** disks, int numberOfDisks, pid_t pid) {
+	int i;
+
+	for (i = 0; i < numberOfDisks; ++i) {
+		if (disks[i]->pid == (long)pid) {
+			return disks[i];
+		}
+	}
+
+	return (disk*)NULL;
+}
+
+void writeResultsFile(char * filename, disk ** disks, int numberOfDisks) {
+	FILE * fp = fopen(filename, "w");
+
+	if ( ! fp ){
+		perror(filename);
+		return;
+	}
+
+	int i;
+	for (i = 0; i < numberOfDisks; ++i) {
+		fprintf(fp, "Disco %d:\nMedia real: %f\nMedia imaginaria: %f\nPotencia: %f\nRuido total: %f\n",
+						disks[i]->id,
+						disks[i]->realMean,
+						disks[i]->imaginaryMean,
+						disks[i]->potency,
+						disks[i]->totalNoise);
+	}
+
+	fclose(fp);
 }
