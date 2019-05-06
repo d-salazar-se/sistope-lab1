@@ -1,13 +1,13 @@
 #include "lab.h"
 
 #define USAGE "USAGE:\n\
-./lab1.o -i <visibilities filename> -o <output filename> -n
-	-o nombre de archivo de salida
-	-n cantidad de discos
-	-d ancho de cada disco\n
-OPTIONS:\n
-\t-b\tShow each child process visibilities
-"
+./lab1.o -i <filename> -o <filename> -n <amount of disks> -d <disk width> [-b]\n\
+\t-i\tnombre de archivo de visibilidades\n\
+\t-o\tnombre de archivo de salida\n\
+\t-n\tcantidad de discos\n\
+\t-d\tancho de cada disco\n\
+OPTIONS:\n\
+\t-b\tShow each child process visibilities"
 
 void printVisibilitiesFile(visibilityArray * va) {
 	int i;
@@ -66,27 +66,14 @@ param * getParams(int argc, char * argv[]) {
 		}
 	}
 
-	opterr = 0;
 	// revisar parametros obligatorios
-	if ( ! params->filenameVisibilities) {
-		fprintf(stderr, "Parametro incorrecto para -i <filename>\n");
-		opterr = 1;
-	}
-	if ( ! params->filenameOutput) {
-		fprintf(stderr, "Parametro incorrecto para -o <filename>\n");
-		opterr = 1;
-	}
-	if (params->numberOfDisks <= 0) {
-		fprintf(stderr, "Parametro incorrecto para -n <number of disks>\n");
-		opterr = 1;
-	}
-	if (params->diskWidth <= 0) {
-		fprintf(stderr, "Parametro incorrecto para -d <disk width>\n");
-		opterr = 1;
-	}
-
-	if (opterr == 1) {
+	if ( ! params->filenameVisibilities
+		|| ! params->filenameOutput
+		|| params->numberOfDisks <= 0
+		|| params->diskWidth <= 0) {
 		fprintf(stderr, "%s\n", USAGE);
+		exit(1);
+		return (param*)NULL;
 	}
 
 	return params;
