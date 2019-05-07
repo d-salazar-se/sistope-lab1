@@ -68,6 +68,10 @@ visibilityArray * readVisibilitiesFile(const char * filename) {
 
 	FILE * fp = fopen(filename, "r");
 
+	if ( ! fp) {
+		perror(filename);
+	}
+
 	visibility * line = (visibility*)malloc(sizeof(visibility));
 
 	while ( ! feof(fp) && fscanf(fp, "%f,%f,%f,%f,%f", &(line->u), &(line->v), &(line->real), &(line->imaginary), &(line->noise))) {
