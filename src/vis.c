@@ -3,7 +3,10 @@
 
 int main(int argc, char const *argv[])
 {
-	float realMean, imaginaryMean, potency, totalNoise;
+	float realMean = 0.0,
+			imaginaryMean = 0.0,
+			potency = 0.0,
+			totalNoise = 0.0;
 	float u, v, real, imaginary, noise;
 	int records = 0;
 
@@ -19,7 +22,7 @@ int main(int argc, char const *argv[])
 	realMean = realMean / (float)records ;
 	imaginaryMean = imaginaryMean / (float)records ;
 
-	printf("%f,%f,%f,%f,%f\n", realMean, imaginaryMean, potency, totalNoise);
+	printf("%f,%f,%f,%f\n", realMean, imaginaryMean, potency, totalNoise);
 
 	return 0;
 }

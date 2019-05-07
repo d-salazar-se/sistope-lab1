@@ -22,7 +22,6 @@ int main(int argc, char *argv[])
 	 */
 	int i;
 	// for (i = 0; i < params->numberOfDisks; ++i) {
-		
 	// 	if (fork() == 0) {
 	// 		disks[i]->pid = getpid();
 	// 	}
@@ -71,7 +70,6 @@ int main(int argc, char *argv[])
 	 * Generar archivo salida con resultados por hijo
 	 */
 	writeResultsFile(params->filenameOutput, disks, params->numberOfDisks);
-
 
 	return 0;
 }
