@@ -7,7 +7,7 @@ int main(int argc, char const *argv[])
 	float u, v, real, imaginary, noise;
 	int records = 0;
 
-	while(scanf("%f,%f,%f,%f,%f", u, v, real, imaginary, noise)) {
+	while(scanf("%f,%f,%f,%f,%f", &u, &v, &real, &imaginary, &noise)) {
 		realMean += real;
 		imaginaryMean += imaginary;
 		potency += sqrt(pow(real, 2) + pow(imaginary, 2));

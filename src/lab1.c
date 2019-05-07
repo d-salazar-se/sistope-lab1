@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
 	visibilityArray * visibilities = readVisibilitiesFile(params->filenameVisibilities);
 
-	disk ** disks = createDisks(params->numberOfDisks);
+	process ** processes = createProcesses(params->numberOfDisks);
 	/*
 	 * Crear hijos y pipes respectivos
 	 */
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	// for (i = 0; i < params->numberOfDisks; ++i) {
 		
 	// 	if (fork() == 0) {
-	// 		disks[i]->pid = getpid();
+	// 		processes[i]->pid = getpid();
 	// 	}
 	// }
 
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	int selectedDisk = 0;
 	for (i = 0; i < visibilities->numberOfElements; ++i) {
 		selectedDisk = selectDisk(params->diskWidth, visibilities->array[i]);
-		// writeToChild(disks[selectedDisk], "");
+		// writeToChild(processes[selectedDisk], "");
 		printf("[%d] distancia [%f] va al disco [ID:%d] [%d, %d)\n",
 									i,
 									visibilityDistance(visibilities->array[i]),
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	 * a enviar sus resultados de vuelta
 	 */
 	// for (i = 0; i < params->numberOfDisks; ++i) {
-	// 	writeToChild(disks[i], "FIN");
+	// 	writeToChild(processes[i], "FIN");
 	// }
 
 	/*
@@ -62,15 +62,15 @@ int main(int argc, char *argv[])
 	// i = params->numberOfDisks;
 	// while (i > 0) {
 	// 	pid = wait(&status);
-	// 	d = findByPID(disks, params->numberOfDisks, pid);
-	// 	readFromChild(disks[i], params->showChildVisibilities);
+	// 	d = findByPID(processes, params->numberOfDisks, pid);
+	// 	readFromChild(processes[i], params->showChildVisibilities);
 	// 	i--;
 	// }
 
 	/*
 	 * Generar archivo salida con resultados por hijo
 	 */
-	writeResultsFile(params->filenameOutput, disks, params->numberOfDisks);
+	writeResultsFile(params->filenameOutput, processes, params->numberOfDisks);
 
 
 	return 0;
