@@ -1,22 +1,10 @@
 #include "lab.h"
 
-void printVisibilitiesFile(visibilityArray * va) {
-	int i;
-	for (i = 0; i < va->numberOfElements; ++i)
-	{
-		printf("(%12f,%12f) %12f %12f %12f\n", va->array[i]->u,
-												va->array[i]->v,
-												va->array[i]->real,
-												va->array[i]->imaginary,
-												va->array[i]->noise);
-	}
-}
-
 param * getParams(int argc, char * argv[]) {
 	param * params = (param*)malloc(sizeof(param));
 
-	params->numberOfDisks = 0;
-	params->diskWidth = 0;
+	params->numberOfDisks = 1;
+	params->diskWidth = 1;
 	params->showChildVisibilities = 0;
 
 	int option;
@@ -52,8 +40,6 @@ param * getParams(int argc, char * argv[]) {
 		|| ! params->filenameOutput
 		|| params->numberOfDisks <= 0
 		|| params->diskWidth <= 0) {
-		fprintf(stderr, "%s\n", USAGE);
-		exit(1);
 		return (param*)NULL;
 	}
 
@@ -100,24 +86,6 @@ int selectDisk(int diskWidth, visibility * v) {
 	return (visibilityDistance(v) / diskWidth);
 }
 
-void writeToChild(disk * d, char * message) {
-	// char * argv[] = { message, NULL };
-	// char * envp[] = { NULL };
-
-	// execve("./vis.o", argv, envp);
-
-	write(d->pipe[ESCRITURA], message, strlen(message) * sizeof(char));
-}
-
-void readFromChild(disk * d, int bFlag) {
-	char buffer[256];
-	read(d->pipe[LECTURA], buffer, 256 * sizeof(char));
-
-	if (bFlag) {
-		printf("Soy el hijo de pid %d, procesé %d visibilidades\n", getpid(), 0);
-	}
-}
-
 disk ** createDisks(int numberOfDisks) {
 	disk ** disks = (disk**)malloc(numberOfDisks * sizeof(disk*));
 
@@ -125,16 +93,70 @@ disk ** createDisks(int numberOfDisks) {
 	for (i = 0; i < numberOfDisks; ++i) {
 		disks[i] = (disk*)malloc(sizeof(disk));
 
-		pipe(disks[i]->pipe);
+		pipe(disks[i]->pipe[0]);
+		pipe(disks[i]->pipe[1]);
 
+		disks[i]->pid = fork();
+		
 		disks[i]->id 			= i + 1;
+
 		disks[i]->realMean 		= 0.0;
 		disks[i]->imaginaryMean = 0.0;
 		disks[i]->potency 		= 0.0;
 		disks[i]->totalNoise 	= 0.0;
+
+		// error
+		if (disks[i]->pid < 0) {
+			return (disk**)NULL;
+		}
+		// padre
+		else if (disks[i]->pid > 0) {
+			close(disks[i]->pipe[0][1]);
+			close(disks[i]->pipe[1][0]);
+		}
+		// hijo(s)
+		else {
+			// cierra pipes que no usan los hijos
+			close(disks[i]->pipe[1][1]);
+			close(disks[i]->pipe[0][0]);
+			// los que si usa, los copia a la salida standard
+			dup2(disks[i]->pipe[1][0], STDIN_FILENO);
+			dup2(disks[i]->pipe[0][1], STDOUT_FILENO);
+			// ejecuta "vis"
+			execve("./vis.o", NULL, NULL);
+			return (disk**)NULL;
+		}
+
 	}
 
 	return disks;
+}
+
+void writeToChild(disk * d, visibility * v) {
+	char buffer[MAX_STR_BUFF];
+	
+	sprintf(buffer, "%f,%f,%f,%f,%f\n", v->u, v->v, v->real, v->imaginary, v->noise);
+	
+	write(d->pipe[1][1], buffer, strlen(buffer));
+}
+
+void readFromChild(disk * d, int bFlag) {
+	char buffer[MAX_STR_BUFF];
+	int quantity;
+	
+	read(d->pipe[0][0], buffer, MAX_STR_BUFF * sizeof(char));
+	sscanf(buffer, "%f,%f,%f,%f,%d\n", &d->realMean, &d->imaginaryMean, &d->potency, &d->totalNoise, &quantity);
+	
+	if (bFlag) {
+		printf("Soy el hijo de pid %d, procesé %d visibilidades\n", d->pid, quantity);
+	}
+}
+
+void endPipes(disk ** disks, int numberOfDisks, int stream) {
+	int i;
+	for (i = 0; i < numberOfDisks; ++i) {
+		close(disks[i]->pipe[stream][stream]);
+	}
 }
 
 disk * findByPID(disk ** disks, int numberOfDisks, pid_t pid) {
@@ -168,4 +190,25 @@ void writeResultsFile(char * filename, disk ** disks, int numberOfDisks) {
 	}
 
 	fclose(fp);
+}
+
+void freeMem(param * p, visibilityArray * va, disk ** d) {
+	int i;
+
+	// visibilities
+	for (i = 0; i < va->numberOfElements; ++i) {
+		free(va->array[i]);
+	}
+	free(va);
+
+	// disks
+	for (i = 0; i < p->numberOfDisks; ++i) {
+		free(d[i]);
+	}
+	free(d);
+
+	// params
+	free(p->filenameVisibilities);
+	free(p->filenameOutput);
+	free(p);
 }

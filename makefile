@@ -6,4 +6,4 @@ clean:
 	-rm -f lab1.o
 
 run: 
-	./lab1.o -i visibilities.csv -o salida.o -n 3 -d 100 -b
+	./lab1.o -i visibilities.csv -o salida.o -n 5 -d 100 -b
